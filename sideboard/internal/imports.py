@@ -14,7 +14,7 @@ def _discover_plugins():
     plugin_dirs = [d for d in glob(join(config['plugins_dir'], '*')) if isdir(d) and not basename(d).startswith('_')]
 
     print("plugin_dirs: " + str(plugin_dirs))
-    sorted_plugin_ordering = sorted(plugin_dirs, reverse=True, key=lambda d: (ordered.index(basename(d)) if basename(d) in ordered else -1)):
+    sorted_plugin_ordering = sorted(plugin_dirs, reverse=True, key=lambda d: (ordered.index(basename(d)) if basename(d) in ordered else -1))
 
     sorted_plugin_names = [basename(p) for p in sorted_plugin_ordering]
     print("would load plugins in the following order:" + str(sorted_plugin_names))
