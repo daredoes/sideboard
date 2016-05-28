@@ -13,6 +13,9 @@ def _discover_plugins():
     print("priority_plugins: " + str(ordered))
     plugin_dirs = [d for d in glob(join(config['plugins_dir'], '*')) if isdir(d) and not basename(d).startswith('_')]
 
+    # glob() results are not ordered, so we sort here to ensure consistency on multiple platforms
+    plugin_dirs = sorted(plugin_dirs, key=lambda d: basename(d))
+
     print("plugin_dirs: " + str(plugin_dirs))
     sorted_plugin_ordering = sorted(plugin_dirs, reverse=True, key=lambda d: (ordered.index(basename(d)) if basename(d) in ordered else -1))
 
