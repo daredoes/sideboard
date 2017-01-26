@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import cherrypy
 
-import sideboard.server
+import sideboard
 
 if __name__ == '__main__':
     cherrypy.engine.start()
