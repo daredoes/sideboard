@@ -21,23 +21,23 @@ def jsonrpc_auth(body):
 def ldap_auth(username, password):
     if not username or not password:
         return False
-    
+
     try:
         conn = ldap.initialize(config['ldap.url'])
-        
+
         force_start_tls = False
         if config['ldap.cacert']:
             ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, config['ldap.cacert'])
             force_start_tls = True
-            
+
         if config['ldap.cert']:
             ldap.set_option(ldap.OPT_X_TLS_CERTFILE, config['ldap.cert'])
             force_start_tls = True
-            
+
         if config['ldap.key']:
             ldap.set_option(ldap.OPT_X_TLS_KEYFILE, config['ldap.key'])
             force_start_tls = True
-    
+
         if force_start_tls:
             conn.start_tls_s()
         else:
@@ -45,7 +45,7 @@ def ldap_auth(username, password):
     except:
         log.error('Error initializing LDAP connection', exc_info=True)
         raise
-    
+
     for basedn in listify(config['ldap.basedn']):
         dn = '{}={},{}'.format(config['ldap.userattr'], username, basedn)
         log.debug('attempting to bind with dn {}', dn)
@@ -76,7 +76,7 @@ class Root(object):
                 raise cherrypy.HTTPRedirect(return_to)
             else:
                 message = 'Invalid credentials'
-        
+
         return {
             'message': message,
             'username': username,
@@ -93,7 +93,8 @@ class Root(object):
                 'paths': []
             }
         for path, app in cherrypy.tree.apps.items():
-            if path:  # exclude what Sideboard itself mounts
+            # exclude what Sideboard itself mounts and grafted mount points
+            if path and hasattr(app, 'root'):
                 plugin = app.root.__module__.split('.')[0]
                 plugin_info[plugin]['paths'].append(path)
         return {
@@ -109,9 +110,9 @@ class Root(object):
 
     json = _make_jsonrpc_handler(services.get_services(), precall=jsonrpc_auth)
     jsonrpc = _make_jsonrpc_handler(services.get_services(),
-                                   precall=lambda body: threadlocal.reset(
-                                       username=cherrypy.session.get('username'),
-                                       client=body.get('websocket_client')))
+                                    precall=lambda body: threadlocal.reset(
+                                        username=cherrypy.session.get('username'),
+                                        client=body.get('websocket_client')))
 
 
 class SideboardWebSocket(WebSocketDispatcher):
@@ -125,7 +126,7 @@ class SideboardWebSocket(WebSocketDispatcher):
     @classmethod
     def check_authentication(cls):
         host, origin = cherrypy.request.headers['host'], cherrypy.request.headers['origin']
-        if ('//' + host) not in origin:
+        if ('//' + host.split(':')[0]) not in origin:
             log.error('Javascript websocket connections must follow same-origin policy; origin {!r} does not match host {!r}', origin, host)
             raise ValueError('Origin and Host headers do not match')
 
@@ -206,4 +207,4 @@ orig_mount = cherrypy.tree.mount
 cherrypy.tree.mount = mount
 cherrypy.tree.mount(Root(), '', app_config)
 
-# del sys.modules['six.moves.winreg']  # kludgy workaround for CherryPy's autoreloader erroring on winreg
+sys.modules.pop('six.moves.winreg', None)  # kludgy workaround for CherryPy's autoreloader erroring on winreg for versions which have this
