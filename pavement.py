@@ -65,7 +65,6 @@ def collect_plugin_dirs(module=False):
             else:
                 yield potential_folder
 
-
 @task
 def make_venv():
     """
@@ -74,27 +73,22 @@ def make_venv():
     bootstrap_venv(__here__ / path('env'), 'sideboard')
     develop_sideboard()
 
-
 def install_pip_requirements_in_dir(dir_of_requirements_txt):
-    path_to_pip = __here__ / path('env/bin/pip')
+    path_to_pip = __here__ / path('env/bin/pip3')
     sh('{pip} install -e {dir_of_requirements_txt}'
         .format(
             pip=path_to_pip,
             dir_of_requirements_txt=dir_of_requirements_txt))
 
-
 def run_setup_py(path):
-    venv_python = str(__here__ / 'env' / 'bin' / 'python')
     sh('cd {path} && {python_path} {setup_path} develop'
         .format(
             path=path,
-            python_path=venv_python if exists(venv_python) else sys.executable,
+            python_path=sys.executable,
             setup_path=join(path, 'setup.py')))
-
 
 def develop_sideboard():
     run_setup_py(__here__)
-
 
 @task
 def pull_plugins():
@@ -104,7 +98,6 @@ happen auth-free, or you need to enter your credentials each time
     """
     for plugin_dir in collect_plugin_dirs():
         sh('cd "{}";git pull'.format(plugin_dir))
-
 
 @task
 def assert_all_files_import_unicode_literals():
@@ -126,7 +119,6 @@ this is skipped for Python 3
             print(''.join(all_files_found))
             raise BuildFailure("there were files that didn't include "
                                '"from __future__ import unicode_literals"')
-
 
 @task
 def assert_all_projects_correctly_define_a_version():
@@ -152,7 +144,6 @@ def assert_all_projects_correctly_define_a_version():
 
         raise BuildFailure("there were projects that didn't include correctly specify __version__")
 
-
 @task
 @needs(['assert_all_files_import_unicode_literals',
         'assert_all_projects_correctly_define_a_version'])
@@ -161,7 +152,6 @@ def run_all_assertions():
     run all the assertion tasks that sideboard supports
     """
 
-
 @task
 @cmdopts([
     ('name=', 'n', 'name of the plugin to create'),
@@ -169,8 +159,6 @@ def run_all_assertions():
     ('no_webapp', 'w', 'do not expose webpages in the plugin'),
     ('no_sqlalchemy', 'a', 'do not use SQLAlchemy in the plugin'),
     ('no_service', 'r', 'do not expose a service in the plugin'),
-    ('no_sphinx', 's', 'do not generate Sphinx docs'),
-    ('django=', 'j', 'create a Django project alongside the plugin with this name'),
     ('cli', 'c', 'make this a cli application; implies -w/-r')
 ])
 def create_plugin(options):
@@ -189,10 +177,9 @@ def create_plugin(options):
         (PLUGINS_DIR / path(plugin_name.replace('_', '-'))).rmtree()
 
     kwargs = {}
-    for opt in ['webapp', 'sqlalchemy', 'service', 'sphinx']:
+    for opt in ['webapp', 'sqlalchemy', 'service']:
         kwargs[opt] = not getattr(options.create_plugin, 'no_' + opt, False)
     kwargs['cli'] = getattr(options.create_plugin, 'cli', False)
-    kwargs['django'] = getattr(options.create_plugin, 'django', None)
     if kwargs['cli']:
         kwargs['webapp'] = False
         kwargs['service'] = False
@@ -201,13 +188,11 @@ def create_plugin(options):
     skeleton.create_plugin(PLUGINS_DIR, plugin_name, **kwargs)
     print('{} successfully created'.format(options.create_plugin.name))
 
-
 @task
 def install_deps():
     install_pip_requirements_in_dir(__here__)
     for pdir in collect_plugin_dirs():
         install_pip_requirements_in_dir(pdir)
-
 
 @task
 def clean():
