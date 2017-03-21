@@ -75,6 +75,9 @@ def make_venv():
 
 def install_pip_requirements_in_dir(dir_of_requirements_txt):
     path_to_pip = __here__ / path('env/bin/pip3')
+
+    print("---- installing dependencies in {} ----"
+        .format(dir_of_requirements_txt))
     sh('{pip} install -e {dir_of_requirements_txt}'
         .format(
             pip=path_to_pip,
@@ -166,9 +169,9 @@ def create_plugin(options):
 
     # this is actually needed thanks to the skeleton using jinja2 (and six, although that's changeable)
     try:
-       pkg_resources.get_distribution("sideboard")
+        pkg_resources.get_distribution("sideboard")
     except pkg_resources.DistributionNotFound:
-       raise BuildFailure("This command must be run from within a configured virtual environment.")
+        raise BuildFailure("This command must be run from within a configured virtual environment.")
 
     plugin_name = options.create_plugin.name
 
